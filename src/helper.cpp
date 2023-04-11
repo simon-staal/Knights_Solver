@@ -3,7 +3,7 @@
 #include <cmath>
 #include <algorithm>
 
-int MinimumMovesToDestination(const BoardPos& curr, const BoardPos& dest)
+uint32_t Helpers::MinimumMovesToDestination(const BoardPos& curr, const BoardPos& dest)
 {
     BoardPos diff = dest - curr;
 

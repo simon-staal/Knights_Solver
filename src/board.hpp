@@ -8,11 +8,14 @@
 #include <concepts>
 #include <string>
 #include <type_traits>
+#include <optional>
+#include <algorithm>
 
 #include "common.hpp"
 #include "enum_value_map.hpp"
+#include "helper.hpp"
 
-constexpr size_t MAX_BOARD_SIZE = 100;
+constexpr size_t MAX_BOARD_SIZE = INT8_MAX - 2;
 
 enum class __attribute__((packed)) BoardState { // Ensures smallest possible size is used for enum
     EMPTY,
@@ -24,21 +27,22 @@ enum class __attribute__((packed)) BoardState { // Ensures smallest possible siz
 
 std::ostream& operator<<(std::ostream& os, BoardState boardState);
 
-enum class Target {
-    BLUE,
-    RED
-};
-
-template<size_t Width, size_t Height> requires (Width <= MAX_BOARD_SIZE && Height <= MAX_BOARD_SIZE)
+template <size_t Width, size_t Height> requires (Width <= MAX_BOARD_SIZE && Height <= MAX_BOARD_SIZE)
 class Board {
 public:
     Board(const std::array<std::array<char, Width>, Height>& refBoard);
 
-    uint8_t width() const { return Width; }
-    uint8_t height() const { return Height; }
-    BoardState at(const BoardPos& bp) const { return board[bp]; }
-
+    int8_t width() const { return Width; }
+    int8_t height() const { return Height; }
+    BoardState at(const BoardPos& bp) const { return mBoard[bp.y][bp.x]; }
+    const std::array<std::array<BoardState, Width>, Height>& GetBoard() const { return mBoard; }
+    bool operator==(const Board<Width, Height>& other) const { return mBoard == other.GetBoard(); }
+    
     bool IsSolved(const std::unordered_map<Target, std::vector<BoardPos>>& targets) const;
+    uint32_t GetTileHeuristicCost(const BoardPos& tile, const std::unordered_map<Target, std::vector<BoardPos>>& targets) const;
+    uint32_t GetHeuristicCost(const std::unordered_map<Target, std::vector<BoardPos>>& targets) const;
+    
+
     void ApplyMove(const Move& move);
     std::vector<Move> GetPossibleMoves() const;
 
@@ -46,17 +50,17 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const Board<W, H>& b);
 
 private:
-    BoardState& operator[](const BoardPos& bp) { return board[bp.y][bp.x]; }
+    BoardState& operator[](const BoardPos& bp) { return mBoard[bp.y][bp.x]; }
 
     bool IsInBounds(const BoardPos& pos) const;
-    bool IsMoveValid(const Move& move, bool enableLogging) const;
+    bool IsMoveValid(const Move& move, bool enableLogging = false) const;
 
-    std::array<std::array<BoardState, Width>, Height> board;
+    std::array<std::array<BoardState, Width>, Height> mBoard;
 };
 
 // Templated functions must be defined in the same translation unit they are declared, implementation is below
 
-static constexpr std::array<std::pair<BoardState, char>, static_cast<int>(BoardState::BLOCKED) + 1> boardStateValues {{
+static constexpr std::array<std::pair<BoardState, char>, static_cast<uint32_t>(BoardState::BLOCKED) + 1> boardStateValues {{
     {BoardState::EMPTY, ' '},
     {BoardState::BLUE, 'B'},
     {BoardState::RED, 'R'},
@@ -72,14 +76,14 @@ std::ostream& operator<<(std::ostream& os, BoardState boardState)
     return os;
 }
 
-template<size_t Width, size_t Height>
+template <size_t Width, size_t Height>
 Board<Width, Height>::Board(const std::array<std::array<char, Width>, Height>& refBoard)
 {
     for (size_t y = 0; y < Height; y++)
     {
         for (size_t x = 0; x < Width; x++)
         {
-            board[y][x] = boardStateMapping.toEnum(refBoard[y][x]);
+            mBoard[y][x] = boardStateMapping.toEnum(refBoard[y][x]);
         }
     }
 }
@@ -95,47 +99,86 @@ constexpr unsigned ceillog2(unsigned x)
     return x == 1 ? 0 : floorlog2(x - 1) + 1;
 }
 
+std::optional<Target> GetCorrespondingTarget(BoardState boardState)
+{
+    switch (boardState) 
+    {
+        case BoardState::BLUE:
+            return Target::BLUE;
+        case BoardState::RED:
+            return Target::RED;
+        case BoardState::EMPTY:
+        case BoardState::YELLOW:
+        case BoardState::BLOCKED:
+            return {};
+    }
+    std::cerr << "Unexpected boardState " << static_cast<std::underlying_type<BoardState>::type>(boardState) << std::endl;
+    exit(1);
+}
+
 bool boardStateMatchesTarget(BoardState boardState, Target target) 
 {
-    switch(target) {
-        case Target::BLUE:
-            return boardState == BoardState::BLUE;
-        case Target::RED:
-            return boardState == BoardState::RED;
-    }
-    std::cerr << "Unexpected target " << static_cast<std::underlying_type<Target>::type>(target) << std::endl;
-    exit(1);
+    auto boardStateTarget = GetCorrespondingTarget(boardState);
+    return boardStateTarget && boardStateTarget.value() == target;
 }
 }
 
-template<size_t Width, size_t Height>
+template <size_t Width, size_t Height>
 bool Board<Width, Height>::IsSolved(const std::unordered_map<Target, std::vector<BoardPos>>& targets) const
 {
     for (const auto& [target, positions] : targets)
     {
         for (const auto& pos : positions)
         {
-            if (!boardStateMatchesTarget(board.at(pos), target))
+            if (!boardStateMatchesTarget(this->at(pos), target))
                 return false;
         }
     }
     return true;
 }
 
-template<size_t Width, size_t Height>
+template <size_t W, size_t H>
+uint32_t Board<W, H>::GetTileHeuristicCost(const BoardPos& tile, const std::unordered_map<Target, std::vector<BoardPos>>& targets) const
+{
+    auto target = GetCorrespondingTarget(this->at(tile));
+    if (!target)
+        return 0;
+
+    const auto& candidateDestinations = targets.at(target.value());
+    auto cmp = [tile](BoardPos end1, BoardPos end2) { return Helpers::MinimumMovesToDestination(tile, end1) < Helpers::MinimumMovesToDestination(tile, end2); };
+    auto minIt = std::min_element(candidateDestinations.begin(), candidateDestinations.end(), cmp);
+    return Helpers::MinimumMovesToDestination(tile, *minIt);
+}
+
+template <size_t W, size_t H>
+uint32_t Board<W, H>::GetHeuristicCost(const std::unordered_map<Target, std::vector<BoardPos>>& targets) const
+{
+    uint32_t minimumMovesToSolve = 0;
+    for (int8_t y = 0; y < height(); y++)
+    {
+        for (int8_t x = 0; x < width(); x++)
+        {
+            BoardPos start{x, y};
+            minimumMovesToSolve += GetTileHeuristicCost(start, targets);
+        }
+    }
+    return minimumMovesToSolve;
+}
+
+template <size_t Width, size_t Height>
 void Board<Width, Height>::ApplyMove(const Move& move)
 {
     if (!IsMoveValid(move, true))
         exit(1);
     
-    board[move.end] = board[move.start];
-    board[move.start] = BoardState::EMPTY;
+    (*this)[move.end] = (*this)[move.start];
+    (*this)[move.start] = BoardState::EMPTY;
 }
 
-template<size_t Width, size_t Height>
+template <size_t Width, size_t Height>
 bool Board<Width, Height>::IsInBounds(const BoardPos& pos) const
 {
-    return pos.x >= 0 && pos.x < Width && pos.y >= 0 && pos.y < Height;
+    return pos.x >= 0 && pos.x < width() && pos.y >= 0 && pos.y < height();
 }
 
 namespace {
@@ -147,7 +190,7 @@ bool IsKnight(BoardState state)
 }
 }
 
-template<size_t Width, size_t Height>
+template <size_t Width, size_t Height>
 bool Board<Width, Height>::IsMoveValid(const Move& move, bool enableLogging) const
 {
     if (!IsInBounds(move.start) || !IsInBounds(move.end))
@@ -157,17 +200,17 @@ bool Board<Width, Height>::IsMoveValid(const Move& move, bool enableLogging) con
         return false;
     }
 
-    if (!IsKnight(board.at(move.start)))
+    if (!IsKnight(this->at(move.start)))
     {
         if (enableLogging)
-            std::cerr << "Cannot move from " << move.start << " as tile does not contain a knight (" << board.at(move.start) << ')' << std::endl;
+            std::cerr << "Cannot move from " << move.start << " as tile does not contain a knight (" << this->at(move.start) << ')' << std::endl;
         return false;
     }
 
-    if (board.at(move.end) != BoardState::EMPTY)
+    if (this->at(move.end) != BoardState::EMPTY)
     {
         if (enableLogging)
-            std::cerr << "Cannot move to " << move.end << " as tile is not empty (" << board.at(move.end) << ')' << std::endl;
+            std::cerr << "Cannot move to " << move.end << " as tile is not empty (" << this->at(move.end) << ')' << std::endl;
         return false;
     }
 
@@ -184,16 +227,16 @@ bool Board<Width, Height>::IsMoveValid(const Move& move, bool enableLogging) con
     return true;
 }
 
-template<size_t Width, size_t Height>
+template <size_t Width, size_t Height>
 std::vector<Move> Board<Width, Height>::GetPossibleMoves() const
 {
     std::vector<Move> moves;
-    for (uint8_t y = 0; y < height(); y++)
+    for (int8_t y = 0; y < height(); y++)
     {
-        for (uint8_t x = 0; x < width(); x++)
+        for (int8_t x = 0; x < width(); x++)
         {
             BoardPos start = {x, y};
-            if (IsKnight(board[start]))
+            if (IsKnight(this->at(start)))
             {
                 for (BoardPos displacement : knightMoves)
                 {
@@ -225,12 +268,12 @@ std::string GenerateRowSeperator(size_t width)
 }
 }
 
-template<size_t Width, size_t Height>
+template <size_t Width, size_t Height>
 std::ostream& operator<<(std::ostream& os, const Board<Width, Height>& b)
 {
     static const std::string rowSeperator{GenerateRowSeperator(Width * 2 + 1)};
 
-    for (const auto& row : b.board)
+    for (const auto& row : b.mBoard)
     {
         os << rowSeperator << '\n';
         for (BoardState tile : row)
@@ -253,9 +296,9 @@ namespace std {
             constexpr unsigned boardStateWidth = ceillog2(static_cast<int>(BoardState::BLOCKED) - 1);
             size_t temp = 0;
             int tempBitsUsed = 0;
-            for (uint8_t y = 0; y < b.height(); y++) 
+            for (int8_t y = 0; y < b.height(); y++) 
             {
-                for (uint8_t x = 0; x < b.width(); x++)
+                for (int8_t x = 0; x < b.width(); x++)
                 {
                     BoardState s = b.at({y, x});
                     // The blocked board state is not included in the hash since it tiles with this state are constant

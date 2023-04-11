@@ -15,6 +15,10 @@ struct BoardPos {
     BoardPos operator-(const BoardPos& other) const {
         return {static_cast<int8_t>(x - other.x), static_cast<int8_t>(y - other.y)};
     }
+
+    bool operator==(const BoardPos& other) const {
+        return (x == other.x && y == other.y);
+    }
 };
 
 std::ostream& operator<<(std::ostream& os, const BoardPos& bp);
@@ -36,3 +40,8 @@ struct Move {
 };
 
 std::ostream& operator<<(std::ostream& os, const Move& m);
+
+enum class Target {
+    BLUE,
+    RED
+};

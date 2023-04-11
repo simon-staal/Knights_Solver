@@ -1,12 +1,13 @@
 #pragma once
 
+#include <iostream>
 #include <cstdint>
 #include <array>
 #include <vector>
 #include <unordered_map>
 #include <concepts>
 
-#include <common.hpp>
+#include "common.hpp"
 
 constexpr size_t MAX_BOARD_SIZE = 100;
 
@@ -38,11 +39,11 @@ public:
     void ApplyMove(const Move& move);
     std::vector<Move> GetPossibleMoves() const;
 
+    template<size_t W, size_t H>
+    friend std::ostream& operator<<(std::ostream& os, const Board<W, H>& b);
+
 private:
     BoardState& operator[](const BoardPos& bp) { return board[bp.y][bp.x]; }
-
-    template<uint8_t W, uint8_t H>
-    friend std::ostream& operator<<(std::ostream& os, const Board<W, H>& b);
 
     bool IsInBounds(const BoardPos& pos) const;
     bool IsMoveValid(const Move& move, bool enableLogging) const;
@@ -51,6 +52,6 @@ private:
 };
 
 namespace std {
-    template <uint8_t Width, uint8_t Height>
+    template <size_t Width, size_t Height>
     struct hash<Board<Width, Height>>;
 }

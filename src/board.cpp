@@ -1,6 +1,7 @@
 #include "board.hpp"
 
 #include <type_traits>
+#include <string>
 
 #include "enum_value_map.hpp"
 
@@ -156,24 +157,43 @@ std::vector<Move> Board<Width, Height>::GetPossibleMoves() const
     return moves;
 }
 
+namespace {
+std::string GenerateRowSeperator(size_t width)
+{
+    std::string rowSeperator;
+    rowSeperator.resize(width);
+    for (size_t i = 0; i < width; i++)
+    {
+        if (i % 2) {
+            rowSeperator[i] = '-';
+        } else {
+            rowSeperator[i] = '+';
+        }
+    }
+    return rowSeperator;
+}
+}
+
 template<size_t Width, size_t Height>
 std::ostream& operator<<(std::ostream& os, const Board<Width, Height>& b)
 {
+    static const std::string rowSeperator{GenerateRowSeperator(Width * 2 + 1)};
+
     for (const auto& row : b.board)
     {
-        os << std::string('-', Width * 2 + 1) << '\n';
+        os << rowSeperator << '\n';
         for (BoardState tile : row)
         {
             os << '|' << tile;
         }
         os << "|\n";
     }
-    os << std::string('-', Width * 2 + 1);
+    os << rowSeperator;
     return os;
 }
 
 namespace std {
-    template <uint8_t Width, uint8_t Height>
+    template <size_t Width, size_t Height>
     struct hash<Board<Width, Height>>
     {
         std::size_t operator()(const Board<Width, Height>& b) const

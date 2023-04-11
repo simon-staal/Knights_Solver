@@ -14,7 +14,7 @@ src_files = $(shell find $(src_dir) -name '*.cpp')
 
 OBJS := $(src_files:%=$(build_dir)/%.o)
 
-standard: $(OBJS)
+solver: $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $(build_dir)/$@ $(OBJS)
 
 $(build_dir)/%.cpp.o: %.cpp

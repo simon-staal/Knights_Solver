@@ -17,10 +17,7 @@ struct BoardPos {
     }
 };
 
-std::ostream& operator<<(std::ostream& os, const BoardPos& bp) {
-    os << static_cast<char>('a' + bp.x) << bp.y + 1;
-    return os;
-}
+std::ostream& operator<<(std::ostream& os, const BoardPos& bp);
 
 static constexpr std::array<BoardPos, 8> knightMoves = {{
     BoardPos{1, 2},
@@ -38,7 +35,4 @@ struct Move {
     BoardPos end;
 };
 
-std::ostream& operator<<(std::ostream& os, const Move& m) {
-    os << m.start << "->" << m.end;
-    return os;
-}
+std::ostream& operator<<(std::ostream& os, const Move& m);

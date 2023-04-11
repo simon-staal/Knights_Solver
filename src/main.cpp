@@ -10,4 +10,5 @@ int main()
     }};
 
     Board<2,2> board(initialState);
+    std::cout << board << std::endl;
 }

@@ -80,7 +80,7 @@ template <size_t W, size_t H>
 bool Solver<W, H>::NodeOrder(const Solution<W, H>& l, const Solution<W, H>& r)
 {
     // We require NodeOrder(l, r) == NodeOrder(r, l) iff l == r
-    if (l.GetTotalCost() < r.GetTotalCost())
+    if (l.GetTotalCost() == r.GetTotalCost())
     {
         if (l.NOfMoves() == r.NOfMoves())
         {
@@ -122,7 +122,7 @@ void Solver<W, H>::InsertNode(Solution<W, H>&& solution)
         mNodeMap.erase(solutionBoard);
     }
 
-    auto [it, setRes] = mAvailableNodes.insert(solution);
+    auto [it, setRes] = mAvailableNodes.insert(std::move(solution));
     if (!setRes)
     {
         std::cerr << "[Error] Unable to insert solution into mAvailableNodes (should be impossible)" << std::endl;

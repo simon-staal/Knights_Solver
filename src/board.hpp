@@ -15,7 +15,7 @@
 #include "enum_value_map.hpp"
 #include "helper.hpp"
 
-constexpr size_t MAX_BOARD_SIZE = INT8_MAX - 2;
+constexpr size_t MAX_BOARD_SIZE = 9;
 
 enum class __attribute__((packed)) BoardState { // Ensures smallest possible size is used for enum
     EMPTY,
@@ -254,35 +254,55 @@ std::vector<Move> Board<Width, Height>::GetPossibleMoves() const
 namespace {
 std::string GenerateRowSeperator(size_t width)
 {
+    size_t sepLength = width * 2 + 2;
     std::string rowSeperator;
-    rowSeperator.resize(width);
-    for (size_t i = 0; i < width; i++)
+    rowSeperator.resize(sepLength);
+    rowSeperator[0] = ' ';
+    for (size_t i = 1; i < sepLength; i++)
     {
         if (i % 2) {
-            rowSeperator[i] = '-';
-        } else {
             rowSeperator[i] = '+';
+        } else {
+            rowSeperator[i] = '-';
         }
     }
     return rowSeperator;
+}
+
+std::string GenerateRowHeader(size_t width)
+{
+    size_t headerLength = 2 * width + 1;
+    std::string rowHeader;
+    rowHeader.reserve(headerLength);
+    rowHeader.push_back(' ');
+    for (size_t x = 0; x < width; x++)
+    {
+        rowHeader.push_back(' ');
+        rowHeader.push_back(x + 'a');
+    }
+    return rowHeader;
 }
 }
 
 template <size_t Width, size_t Height>
 std::ostream& operator<<(std::ostream& os, const Board<Width, Height>& b)
 {
-    static const std::string rowSeperator{GenerateRowSeperator(Width * 2 + 1)};
+    static const std::string rowHeader{GenerateRowHeader(Width)};
+    static const std::string rowSeperator{GenerateRowSeperator(Width)};
 
-    for (const auto& row : b.mBoard)
+    os << rowHeader << '\n';
+
+    for (int8_t y = 0; y < b.height(); y++)
     {
-        os << rowSeperator << '\n';
-        for (BoardState tile : row)
+        os << rowSeperator << '\n' << y+1;
+        for (int8_t x = 0; x < b.width(); x++)
         {
-            os << '|' << tile;
+            os << '|' << b.at({x, y});
         }
         os << "|\n";
     }
     os << rowSeperator;
+    
     return os;
 }
 

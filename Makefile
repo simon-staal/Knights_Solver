@@ -7,7 +7,7 @@ CXXFLAGS = -Wall -Wno-unused-result -Werror=return-type -Werror=main -pipe -D_FO
 ifdef DEBUG
 	CXXFLAGS += -g -DDEBUG
 else
-	CXXFLAGS += -O0
+	CXXFLAGS += -O3
 endif
 
 src_files = $(shell find $(src_dir) -name '*.cpp')

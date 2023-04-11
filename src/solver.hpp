@@ -39,6 +39,7 @@ private:
     std::unordered_map<Board<Width, Height>, typename std::set<Solution<Width, Height>>::iterator> mNodeMap;
     std::unordered_set<Board<Width, Height>> mExpandedNodes;
     std::optional<Solution<Width, Height>> mBestSolution;
+    size_t mFilteredSolutions = 0;
 };
 
 template <size_t W, size_t H>
@@ -46,6 +47,8 @@ Solution<W, H> Solver<W, H>::GenerateSolution(uint32_t maxIterations)
 {
     for (uint32_t i = 0; i < maxIterations; i++)
     {
+        if (i % 100 == 0)
+            std::cout << "[Info] Iteration " << i << ": # of pending nodes = " << mAvailableNodes.size() << ", # of filtered nodes = " << mFilteredSolutions << ", found solution = " << mBestSolution.has_value() << std::endl;
         if (mAvailableNodes.empty())
         {
             if (mBestSolution)
@@ -108,13 +111,19 @@ void Solver<W, H>::InsertNode(Solution<W, H>&& solution)
 {
     Board solutionBoard = solution.board;
     if (mExpandedNodes.contains(solutionBoard))
+    {
+        mFilteredSolutions++;
         return;
+    }
     
     if (mNodeMap.contains(solutionBoard))
     {
         bool isBetterSolution = solution.NOfMoves() < mNodeMap.at(solutionBoard)->NOfMoves();
         if (!isBetterSolution)
+        {
+            mFilteredSolutions++;
             return;
+        }
 
         // Solutions should have same heuristic cost since board states are identical
         assert(solution.GetTotalCost() < mNodeMap.at(solutionBoard)->GetTotalCost());

@@ -115,6 +115,20 @@ Puzzle<4, 4> Bishop_D4 {
     }}
 };
 
+Puzzle<4, 5> Queen_A1 {
+    .initialState{{
+        {'R', 'R', 'R', 'R'},
+        {' ', 'X', 'X', 'X'},
+        {' ', ' ', ' ', ' '},
+        {'X', 'X', 'X', ' '},
+        {'B', 'B', 'B', 'B'}
+    }},
+    .targets{{
+        {Target::BLUE, {{0, 0}, {1, 0}, {2, 0}, {3, 0}}},
+        {Target::RED, {{0, 4}, {1, 4}, {2, 4}, {3, 4}}}
+    }}
+};
+
 // Currently too hard to solve (100000+ iterations)
 Puzzle<5, 5> King_E1 {
     .initialState{{

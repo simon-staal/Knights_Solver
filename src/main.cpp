@@ -6,7 +6,7 @@
 
 int main()
 {
-    Solver solver(std::move(Puzzles::Bishop_D4));
+    Solver solver(std::move(Puzzles::Queen_A1));
 
     auto solution = solver.GenerateSolution();
     std::cout << solution << std::endl;

@@ -329,26 +329,30 @@ namespace std {
             {
                 for (int8_t x = 0; x < b.width(); x++)
                 {
-                    BoardState s = b.at({y, x});
+                    BoardState s = b.at({x, y});
                     // The blocked board state is not included in the hash since it tiles with this state are constant
                     if (s != BoardState::BLOCKED)
                     {
-                        temp += static_cast<int>(s);
                         temp <<= boardStateWidth;
+                        temp += static_cast<uint32_t>(s);
                         tempBitsUsed += boardStateWidth;
                     }
 
                     constexpr int totalBits = 8 * sizeof(size_t);
                     // Check if there's enough space for the next tile
-                    if (tempBitsUsed + boardStateWidth > totalBits) 
-                    {
-                        boardHash ^= temp;
-                        temp = 0;
-                        tempBitsUsed = 0;
+                    constexpr bool hashOverflowPossible = boardStateWidth * Width * Height > totalBits;
+                    if constexpr (hashOverflowPossible) {
+                        if (tempBitsUsed + boardStateWidth > totalBits) 
+                        {
+                            std::cerr << "[Warning] Hash overflow: collisions possible" << std::endl;
+                            boardHash ^= temp;
+                            temp = 0;
+                            tempBitsUsed = 0;
+                        }
                     }
                 }
             }
-            return boardHash;
+            return boardHash ^ temp;
         }
     };
 }

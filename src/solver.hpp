@@ -92,19 +92,7 @@ bool Solver<W, H>::NodeOrder(const Solution<W, H>& l, const Solution<W, H>& r)
     {
         if (l.NOfMoves() == r.NOfMoves())
         {
-            for (int8_t y = 0; y < l.board.height(); y++)
-            {
-                for (int8_t x = 0; x < l.board.width(); x++)
-                {
-                    BoardPos curr {x, y};
-                    BoardState lState = l.board.at(curr);
-                    BoardState rState = r.board.at(curr);
-                    if (lState == rState)
-                        continue;
-                    
-                    return static_cast<uint32_t>(lState) < static_cast<uint32_t>(rState);
-                }
-            }
+            return std::hash<Board<W, H>>()(l.board) < std::hash<Board<W, H>>()(r.board);
         }
         return l.NOfMoves() > r.NOfMoves();
     }
@@ -140,6 +128,8 @@ void Solver<W, H>::InsertNode(Solution<W, H>&& solution)
     if (!setRes)
     {
         std::cerr << "[Error] Unable to insert solution into mAvailableNodes (should be impossible)" << std::endl;
+        std::cerr << "Tried to insert solution with board state:\n" << solutionBoard << "\ntotal cost = " << solution.GetTotalCost() << ", # of moves = " << solution.NOfMoves() << ", board hash = " << std::hash<Board<W, H>>()(solutionBoard) << std::endl;
+        std::cerr << "Insertion was prevented by solution with board state:\n" << it->board << "\ntotal cost = " << it->GetTotalCost() << ", # of moves = " << it->NOfMoves() << ", board hash = " << std::hash<Board<W, H>>()(it->board) << std::endl;
         exit(1);
     }
     auto [_, mapRes] = mNodeMap.emplace(std::move(solutionBoard), it);

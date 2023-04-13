@@ -85,7 +85,7 @@ Puzzle<3, 4> Rook_C4 {
     }}
 };
 
-// Solves in 5351 iterations (883ms)
+// Solves in 5351 iterations (17ms)
 // 14 moves: d4->b3, a2->b4, d3->c1, c1->a2, b4->d3, b3->d2, a1->b3, b1->a3, d2->b1, c4->d2, a3->c4, b3->d4, d2->b3, b3->a1
 Puzzle<4, 4> Bishop_A1 {
     .initialState{{
@@ -100,7 +100,7 @@ Puzzle<4, 4> Bishop_A1 {
     }}
 };
 
-// Solves in 9507 iterations (3.401s)
+// Solves in 9507 iterations (31ms)
 // 21 moves: c2->a3, b2->c4, a4->b2, c3->a2, a3->b1, b1->c3, a1->c2, c2->a3, b3->d4, a3->b1, d4->c2, c2->a3, c3->a4, b1->c3, a3->b1, c4->a3, b2->c4, a4->b2, c3->a4, b1->c3, a3->b1
 Puzzle<4, 4> Bishop_D4 {
     .initialState{{
@@ -115,7 +115,7 @@ Puzzle<4, 4> Bishop_D4 {
     }}
 };
 
-// Solves in 26532 iterations (1m16.376s)
+// Solves in 26532 iterations (176ms)
 // 16 moves: b1->a3, c1->d3, d5->c3, c3->b1, d1->c3, c3->d5, b5->c3, a3->b5, c3->d1, a5->b3, b3->c1, a1->b3, b3->a5, c5->b3, d3->c5, b3->a1
 Puzzle<4, 5> Queen_A1 {
     .initialState{{

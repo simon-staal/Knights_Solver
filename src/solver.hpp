@@ -26,7 +26,7 @@ public:
         InsertNode(std::move(initialSoln));
     }
 
-    Solution<Width, Height> GenerateSolution(uint32_t maxIterations = 100000);
+    Solution<Width, Height> GenerateSolution(uint32_t maxIterations = 1000000);
     
 private:
     static bool NodeOrder(const Solution<Width, Height>& l, const Solution<Width, Height>& r);
@@ -49,7 +49,7 @@ Solution<W, H> Solver<W, H>::GenerateSolution(uint32_t maxIterations)
     std::cout << "[Info] Attempting to solve:\n" << mAvailableNodes.begin()->board << std::endl;
     for (uint32_t i = 0; i < maxIterations; i++)
     {
-        if (i % 100 == 0)
+        if (i % 10000 == 0)
             std::cout << "[Info] Iteration " << i << ": # of pending nodes = " << mAvailableNodes.size() << ", # of filtered nodes = " << mFilteredSolutions << ", found solution = " << mBestSolution.has_value() << std::endl;
         if (mAvailableNodes.empty())
         {

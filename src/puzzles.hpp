@@ -131,7 +131,7 @@ Puzzle<4, 5> Queen_A1 {
     }}
 };
 
-// Currently too hard to solve (100000+ iterations)
+// Currently too hard to solve (3.5M+ iterations - runs out of RAM)
 Puzzle<5, 5> King_E1 {
     .initialState{{
         {'R', ' ', 'B', ' ', 'R'},

@@ -15,7 +15,8 @@
 #include "enum_value_map.hpp"
 #include "helper.hpp"
 
-constexpr size_t MAX_BOARD_SIZE = 9;
+static constexpr size_t MAX_BOARD_SIZE = 9;
+static constexpr uint32_t TOTAL_HASH_BITS = 8 * sizeof(size_t);  
 
 enum class __attribute__((packed)) BoardState { // Ensures smallest possible size is used for enum
     EMPTY,
@@ -41,10 +42,12 @@ public:
     bool IsSolved(const std::unordered_map<Target, std::vector<BoardPos>>& targets) const;
     uint32_t GetTileHeuristicCost(const BoardPos& tile, const std::unordered_map<Target, std::vector<BoardPos>>& targets) const;
     uint32_t GetHeuristicCost(const std::unordered_map<Target, std::vector<BoardPos>>& targets) const;
-    
 
     void ApplyMove(const Move& move);
     std::vector<Move> GetPossibleMoves() const;
+
+    static constexpr uint32_t kBoardStateBitWidth = Helpers::ceillog2(static_cast<int>(BoardState::BLOCKED) - 1);  
+    static constexpr bool kHashOverflowPossible = kBoardStateBitWidth * Width * Height > TOTAL_HASH_BITS;
 
     template<size_t W, size_t H>
     friend std::ostream& operator<<(std::ostream& os, const Board<W, H>& b);
@@ -87,16 +90,6 @@ Board<Width, Height>::Board(const std::array<std::array<char, Width>, Height>& r
 }
 
 namespace {
-constexpr unsigned floorlog2(unsigned x)
-{
-    return x == 1 ? 0 : 1+floorlog2(x >> 1);
-}
-
-constexpr unsigned ceillog2(unsigned x)
-{
-    return x == 1 ? 0 : floorlog2(x - 1) + 1;
-}
-
 std::optional<Target> GetCorrespondingTarget(BoardState boardState)
 {
     switch (boardState) 
@@ -322,9 +315,9 @@ namespace std {
         std::size_t operator()(const Board<Width, Height>& b) const
         {
             size_t boardHash = 0;
-            constexpr unsigned boardStateWidth = ceillog2(static_cast<int>(BoardState::BLOCKED) - 1);
             size_t temp = 0;
             int tempBitsUsed = 0;
+
             for (int8_t y = 0; y < b.height(); y++) 
             {
                 for (int8_t x = 0; x < b.width(); x++)
@@ -333,16 +326,14 @@ namespace std {
                     // The blocked board state is not included in the hash since it tiles with this state are constant
                     if (s != BoardState::BLOCKED)
                     {
-                        temp <<= boardStateWidth;
+                        temp <<= Board<Width, Height>::kBoardStateBitWidth;
                         temp += static_cast<uint32_t>(s);
-                        tempBitsUsed += boardStateWidth;
+                        tempBitsUsed += Board<Width, Height>::kBoardStateBitWidth;
                     }
 
-                    constexpr int totalBits = 8 * sizeof(size_t);
                     // Check if there's enough space for the next tile
-                    constexpr bool hashOverflowPossible = boardStateWidth * Width * Height > totalBits;
-                    if constexpr (hashOverflowPossible) {
-                        if (tempBitsUsed + boardStateWidth > totalBits) 
+                    if constexpr (Board<Width, Height>::kHashOverflowPossible) {
+                        if (tempBitsUsed + Board<Width, Height>::kBoardStateBitWidth > TOTAL_HASH_BITS) 
                         {
                             std::cerr << "[Warning] Hash overflow: collisions possible" << std::endl;
                             boardHash ^= temp;

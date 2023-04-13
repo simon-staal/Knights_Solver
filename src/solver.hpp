@@ -84,6 +84,26 @@ Solution<W, H> Solver<W, H>::GenerateSolution(uint32_t maxIterations)
     exit(1);
 }
 
+namespace {
+template <size_t W, size_t H>
+bool CompareBoardTiles(const Board<W, H>& l, const Board<W, H>& r)
+{
+    for (int8_t y = 0; y < l.board.height(); y++)
+    {
+        for (int8_t x = 0; x < l.board.width(); x++)
+        {
+            BoardPos curr {x, y};
+            BoardState lState = l.board.at(curr);
+            BoardState rState = r.board.at(curr);
+            if (lState == rState)
+                continue;
+            
+            return static_cast<uint32_t>(lState) < static_cast<uint32_t>(rState);
+        }
+    }
+}
+} // end of anonymous namespace
+
 template <size_t W, size_t H>
 bool Solver<W, H>::NodeOrder(const Solution<W, H>& l, const Solution<W, H>& r)
 {
@@ -92,6 +112,13 @@ bool Solver<W, H>::NodeOrder(const Solution<W, H>& l, const Solution<W, H>& r)
     {
         if (l.NOfMoves() == r.NOfMoves())
         {
+            if constexpr(Board<W, H>::kHashOverflowPossible)
+            {
+                if (std::hash<Board<W, H>>()(l.board) == std::hash<Board<W, H>>()(r.board))
+                {
+                    return CompareBoardTiles(l, r);
+                }
+            }
             return std::hash<Board<W, H>>()(l.board) < std::hash<Board<W, H>>()(r.board);
         }
         return l.NOfMoves() > r.NOfMoves();

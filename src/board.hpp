@@ -32,8 +32,8 @@ class Board {
 public:
     Board(const std::array<std::array<char, Width>, Height>& refBoard);
 
-    int8_t width() const { return Width; }
-    int8_t height() const { return Height; }
+    constexpr int8_t width() const { return Width; }
+    constexpr int8_t height() const { return Height; }
     BoardState at(const BoardPos& bp) const { return mBoard[bp.y][bp.x]; }
     const std::array<std::array<BoardState, Width>, Height>& GetBoard() const { return mBoard; }
     bool operator==(const Board<Width, Height>& other) const { return mBoard == other.GetBoard(); }
@@ -52,7 +52,7 @@ public:
 private:
     BoardState& operator[](const BoardPos& bp) { return mBoard[bp.y][bp.x]; }
 
-    bool IsInBounds(const BoardPos& pos) const;
+    constexpr bool IsInBounds(const BoardPos& pos) const;
     bool IsMoveValid(const Move& move, bool enableLogging = false) const;
 
     std::array<std::array<BoardState, Width>, Height> mBoard;
@@ -60,15 +60,13 @@ private:
 
 // Templated functions must be defined in the same translation unit they are declared, implementation is below
 
-static constexpr std::array<std::pair<BoardState, char>, static_cast<uint32_t>(BoardState::BLOCKED) + 1> boardStateValues {{
-    {BoardState::EMPTY, ' '},
+static constexpr auto boardStateMapping = EnumValueMap<BoardState, char, static_cast<uint32_t>(BoardState::BLOCKED) + 1>{{
+    {{BoardState::EMPTY, ' '},
     {BoardState::BLUE, 'B'},
     {BoardState::RED, 'R'},
     {BoardState::YELLOW, 'Y'},
-    {BoardState::BLOCKED, 'X'}
+    {BoardState::BLOCKED, 'X'}}
 }};
-
-static constexpr auto boardStateMapping = EnumValueMap<BoardState, char, boardStateValues.size()>{{boardStateValues}};
 
 std::ostream& operator<<(std::ostream& os, BoardState boardState)
 {
@@ -154,6 +152,7 @@ template <size_t W, size_t H>
 uint32_t Board<W, H>::GetHeuristicCost(const std::unordered_map<Target, std::vector<BoardPos>>& targets) const
 {
     uint32_t minimumMovesToSolve = 0;
+    // Minimum moves to get pieces to target
     for (int8_t y = 0; y < height(); y++)
     {
         for (int8_t x = 0; x < width(); x++)
@@ -162,6 +161,16 @@ uint32_t Board<W, H>::GetHeuristicCost(const std::unordered_map<Target, std::vec
             minimumMovesToSolve += GetTileHeuristicCost(start, targets);
         }
     }
+
+    // Minimum moves to get pieces out of the way for target
+    for (auto& [_, tiles] : targets)
+    {
+        for (auto tile : tiles)
+        {
+            minimumMovesToSolve += this->at(tile) == BoardState::YELLOW;
+        }
+    }
+
     return minimumMovesToSolve;
 }
 
@@ -176,7 +185,7 @@ void Board<Width, Height>::ApplyMove(const Move& move)
 }
 
 template <size_t Width, size_t Height>
-bool Board<Width, Height>::IsInBounds(const BoardPos& pos) const
+constexpr bool Board<Width, Height>::IsInBounds(const BoardPos& pos) const
 {
     return pos.x >= 0 && pos.x < width() && pos.y >= 0 && pos.y < height();
 }

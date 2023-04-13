@@ -12,16 +12,17 @@
 #include "board.hpp"
 #include "solution.hpp"
 #include "helper.hpp"
+#include "puzzles.hpp"
 
 template <size_t Width, size_t Height>
 class Solver 
 {
 public:
-    Solver(Board<Width, Height>&& initialState, std::unordered_map<Target, std::vector<BoardPos>>&& targets)
-        : mTargets(std::move(targets)),
+    Solver(Puzzle<Width, Height>&& puzzle)
+        : mTargets(std::move(puzzle.targets)),
           mAvailableNodes(NodeOrder)
     {
-        Solution<Width, Height> initialSoln(std::move(initialState), targets);
+        Solution<Width, Height> initialSoln(std::move(puzzle.initialState), mTargets);
         InsertNode(std::move(initialSoln));
     }
 
@@ -34,7 +35,7 @@ private:
     Solution<Width, Height> GetNextNode();
     bool UpdateBestSolution(Solution<Width, Height>&& candidate);
 
-    std::unordered_map<Target, std::vector<BoardPos>>&& mTargets;
+    std::unordered_map<Target, std::vector<BoardPos>> mTargets;
     std::set<Solution<Width, Height>, decltype(&NodeOrder)> mAvailableNodes;
     std::unordered_map<Board<Width, Height>, typename std::set<Solution<Width, Height>>::iterator> mNodeMap;
     std::unordered_set<Board<Width, Height>> mExpandedNodes;
@@ -45,6 +46,7 @@ private:
 template <size_t W, size_t H>
 Solution<W, H> Solver<W, H>::GenerateSolution(uint32_t maxIterations)
 {
+    std::cout << "[Info] Attempting to solve:\n" << mAvailableNodes.begin()->board << std::endl;
     for (uint32_t i = 0; i < maxIterations; i++)
     {
         if (i % 100 == 0)
@@ -52,9 +54,12 @@ Solution<W, H> Solver<W, H>::GenerateSolution(uint32_t maxIterations)
         if (mAvailableNodes.empty())
         {
             if (mBestSolution)
+            {
+                std::cout << "[Info] Exhausted all possible nodes, found optimal solution, terminating @ iteration " << i << std::endl;
                 return *mBestSolution;
+            }
 
-            std::cerr << "[Error] Out of nodes to expand, problem has no solution" << std::endl;
+            std::cerr << "[Error] Out of nodes to expand (explored " << i << " states, filtered " << mFilteredSolutions << "), problem has no solution" << std::endl;
             exit(1);
         }
 

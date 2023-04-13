@@ -4,6 +4,8 @@
 #include <iostream>
 #include <unordered_set>
 
+#include "enum_value_map.hpp"
+
 struct BoardPos {
     int8_t x;
     int8_t y;
@@ -45,3 +47,8 @@ enum class Target {
     BLUE,
     RED
 };
+
+static constexpr auto targetCharMapping = EnumValueMap<Target, char, static_cast<uint32_t>(Target::RED) + 1> {{
+    {{Target::BLUE, 'B'},
+    {Target::RED, 'R'}}
+}};

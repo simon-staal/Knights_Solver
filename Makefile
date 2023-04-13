@@ -2,12 +2,16 @@ build_dir = ./bin
 src_dir = ./src
 
 CXX = g++
-CXXFLAGS = -Wall -Wno-unused-result -Werror=return-type -Werror=main -pipe -D_FORTIFY_SOURCE=2 -fno-delete-null-pointer-checks -std=c++20 -I $(src_dir)
+CXXFLAGS = -Wall -Wextra -Wconversion -Werror -pipe -std=c++20 -I $(src_dir)
 
 ifdef DEBUG
 	CXXFLAGS += -g -DDEBUG
 else
-	CXXFLAGS += -O3
+	CXXFLAGS += -O3 -march=native
+endif
+
+ifdef PROFILE
+	CXXFLAGS += -ggdb
 endif
 
 src_files = $(shell find $(src_dir) -name '*.cpp')

@@ -17,8 +17,8 @@ struct Solution {
         : board(board), moves{}, heuristicCost(board.GetHeuristicCost(targets))
     {}
 
-    uint32_t GetTotalCost() const { return moves.size() + heuristicCost; }
-    uint32_t NOfMoves() const { return moves.size(); }
+    uint32_t GetTotalCost() const { return NOfMoves() + heuristicCost; }
+    uint32_t NOfMoves() const { return static_cast<uint32_t>(moves.size()); }
     bool IsComplete(const std::unordered_map<Target, std::vector<BoardPos>>& targets) { return board.IsSolved(targets); }
 
     void ApplyMove(Move&& move, const std::unordered_map<Target, std::vector<BoardPos>>& targets);

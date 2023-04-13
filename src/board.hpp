@@ -278,13 +278,13 @@ std::string GenerateRowSeperator(size_t width)
     return rowSeperator;
 }
 
-std::string GenerateRowHeader(size_t width)
+std::string GenerateRowHeader(int8_t width)
 {
     size_t headerLength = 2 * width + 1;
     std::string rowHeader;
     rowHeader.reserve(headerLength);
     rowHeader.push_back(' ');
-    for (size_t x = 0; x < width; x++)
+    for (int8_t x = 0; x < width; x++)
     {
         rowHeader.push_back(' ');
         rowHeader.push_back(x + 'a');
@@ -296,7 +296,7 @@ std::string GenerateRowHeader(size_t width)
 template <size_t Width, size_t Height>
 std::ostream& operator<<(std::ostream& os, const Board<Width, Height>& b)
 {
-    static const std::string rowHeader{GenerateRowHeader(Width)};
+    static const std::string rowHeader{GenerateRowHeader(b.width())};
     static const std::string rowSeperator{GenerateRowSeperator(Width)};
 
     os << rowHeader << '\n';

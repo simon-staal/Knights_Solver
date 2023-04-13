@@ -115,6 +115,8 @@ Puzzle<4, 4> Bishop_D4 {
     }}
 };
 
+// Solves in 26532 iterations (1m16.376s)
+// 16 moves: b1->a3, c1->d3, d5->c3, c3->b1, d1->c3, c3->d5, b5->c3, a3->b5, c3->d1, a5->b3, b3->c1, a1->b3, b3->a5, c5->b3, d3->c5, b3->a1
 Puzzle<4, 5> Queen_A1 {
     .initialState{{
         {'R', 'R', 'R', 'R'},

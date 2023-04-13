@@ -18,7 +18,7 @@
 static constexpr size_t MAX_BOARD_SIZE = 9;
 static constexpr uint32_t TOTAL_HASH_BITS = 8 * sizeof(size_t);  
 
-enum class __attribute__((packed)) BoardState { // Ensures smallest possible size is used for enum
+enum class BoardState : uint8_t { // Ensures smallest possible size is used for enum
     EMPTY,
     BLUE,
     RED,
@@ -335,7 +335,6 @@ namespace std {
                     if constexpr (Board<Width, Height>::kHashOverflowPossible) {
                         if (tempBitsUsed + Board<Width, Height>::kBoardStateBitWidth > TOTAL_HASH_BITS) 
                         {
-                            std::cerr << "[Warning] Hash overflow: collisions possible" << std::endl;
                             boardHash ^= temp;
                             temp = 0;
                             tempBitsUsed = 0;

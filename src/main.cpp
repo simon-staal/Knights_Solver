@@ -6,8 +6,8 @@
 
 int main()
 {
-    Solver solver(std::move(Puzzles::Queen_A1));
+    Solver solver(std::move(Puzzles::King_E1));
 
-    auto solution = solver.GenerateSolution();
+    auto solution = solver.GenerateSolution(10000000);
     std::cout << solution << std::endl;
 }
